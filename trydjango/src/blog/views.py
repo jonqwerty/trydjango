@@ -4,7 +4,7 @@ from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 
 # Create your views here.
-from .forms import BlogPostForm, BlogPostModelForm
+from .forms import  BlogPostModelForm
 from .models import BlogPost
 
 
@@ -33,8 +33,11 @@ from .models import BlogPost
 def blog_post_list_view(request):
 	# list out objects
 	# coud be search
-	# qs = BlogPost.objects.filter(title__icontains='title')      
-	qs = BlogPost.objects.all()
+	# qs = BlogPost.objects.filter(title__icontains='title') 
+	qs = BlogPost.objects.all().published()
+	if request.user.is_authenticated:
+		my_qs = BlogPost.objects.filter(user=request.user)
+		qs = (qs | my_qs).distinct()
 	template_name = 'blog/list.html'
 	context = {'object_list': qs}
 	return render(request, template_name, context)
@@ -47,7 +50,7 @@ def blog_post_create_view(request):
 	# request.user -> return something
 	# if not request.user.is_authenticated:
 	# 	return render(request, "not-a user.html", {})
-	form = BlogPostModelForm(request.POST or None)
+	form = BlogPostModelForm(request.POST or None, request.FILES or None)
 	if form.is_valid():
 		# obj = BlogPost.objects.create(**form.cleaned_data)
 		obj = form.save(commit=False)
